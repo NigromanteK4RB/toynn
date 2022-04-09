@@ -57,4 +57,30 @@ class Node(object):
 
         return node.output
 
+class Link(object):
+    id: str
+    source: Node
+    dest: Node
+    weight: float
+    is_dead: bool
+    error_derivative: float
+    accumulated_error_derivative: float
+    num_accumulated_derivatives: int
+    regularization: DerivableFunction
+
+    def __init__(link: object, source: Node, dest: Node,
+                 regularization: DerivableFunction, init_zero: bool = False) -> None:
+        link.id: str = source.id + "-" + dest.id
+        link.source: Node = source
+        link.dest: Node = dest
+        link.regularization: DerivableFunction = regularization
+        link.weight: float = random.random() * 2 -1
+        link.is_dead: bool = False
+        link.error_derivative: float = float()
+        link.accumulated_error_derivative: float = float()
+        link.num_accumulated_derivatives: int = int()
+
+        if init_zero:
+            link.weight = float()
+
 
