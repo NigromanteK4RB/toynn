@@ -155,3 +155,62 @@ class Network(list[Layer]):
 
         return network.outputs
 
+    def backwardPropagation(network: list[Layer], target: list[float], error: DerivableFunction) -> None:
+        for n, node in enumerate(network.output_layer):
+            node.output_derivative = error.derivative(node.output, target[n])
+
+        for ln, currentl in enumerate(r_network := list(reversed(network[1:]))):
+            for node in currentl:
+                node.input_derivative = node.output_derivative * node.activation.derivative(node.total_input)
+                node.acc_input_derivative += node.input_derivative
+                node.num_accumulated_derivatives +=1
+
+            for node in currentl:
+                for link in node.input_links:
+                    if (link.is_dead):
+                        continue
+                    link.error_derivative = node.input_derivative * link.source.output
+                    link.accumulated_error_derivative += link.error_derivative
+                    link.num_accumulated_derivatives += 1
+
+            if (currentl == r_network[-1]):
+                continue
+
+            prevl: Layer=r_network[ln+1]
+
+            for node in prevl:
+                node.output_derivative = 0
+                for link in node.output_links:
+                    node.output_derivative += link.weight * link.dest.input_derivative
+
+    def updateWeights(network: list[Layer], learning_rate: float, regularization_rate: float) -> None:
+        for layer in network:
+            for node in layer:
+                if node.num_accumulated_derivatives > 0:
+                    node.bias -= learning_rate * (node.acc_input_derivative / node.num_accumulated_derivatives)
+                    node.acc_input_derivative = 0
+                    node.num_accumulated_derivatives = 0
+
+                for link in node.input_links:
+                    if link.is_dead:
+                        continue
+
+                    if link.regularization != None:
+                        regularization_derivative = link.regularization.derivative(link.weight)
+                    else:
+                        regularization_derivative = 0
+
+                    if link.num_accumulated_derivatives > 0:
+                        link.weight -= (learning_rate / link.num_accumulated_derivatives) * link.accumulated_error_derivative
+
+                    new_link_weight = link.weight - (learning_rate * regularization_rate * regularization_derivative)
+
+                    if ((link.regularization == Regularizations.L1) and (link.weight * new_link_weight) < 0):
+                        link.weight = 0
+                        link.is_dead = True
+                    else:
+                        link.weight = new_link_weight
+
+                    link.accumulated_error_derivative = 0
+                    link.num_accumulated_derivatives = 0
+
