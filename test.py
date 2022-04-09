@@ -3,7 +3,7 @@
 import random
 
 from platform import node
-from nnlib import *
+from toynn import *
 
 network_shape: list[int] = [2, 2, 1]
 activation: DerivableFunction = Activations.Sigmoid
