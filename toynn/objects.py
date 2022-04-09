@@ -83,4 +83,8 @@ class Link(object):
         if init_zero:
             link.weight = float()
 
+class Layer(list[Node]):
+    @property
+    def output(layer: list[Node]) -> list[float]:
+        return [node.output for node in layer]
 
